@@ -1,0 +1,12 @@
+@import "tailwindcss";
+
+@theme {
+  --color-sand-light: #F5F5DC;
+  --color-sand-dark: #E2D1B3;
+  --color-ocean: #2A9D8F;
+  --color-sunset: #E76F51;
+  --color-palm: #264653;
+  
+  --font-serif: "Playfair Display", serif;
+  --font-sans: "Montserrat", sans-serif;
+}
