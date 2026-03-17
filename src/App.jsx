@@ -269,7 +269,7 @@ function App() {
         
         <div className="pt-4">
           <a 
-            href="https://www.google.com/maps/dir/?api=1&destination=Montealban+18+Bacocho+Puerto+Escondido" 
+            href="https://www.google.com/maps/place/Casa+Don+Jos%C3%A9/@15.8679158,-97.0861539,17z/data=!3m1!4b1!4m6!3m5!1s0x85b8f7005b6c317d:0xb4ce7fc27133988f!8m2!3d15.8679107!4d-97.083579!16s%2Fg%2F11w3gnjjvt?entry=ttu&g_ep=EgoyMDI2MDMxMS4wIKXMDSoASAFQAw%3D%3D"  
             target="_blank" 
             rel="noreferrer" 
             className="inline-flex items-center gap-3 border border-palm/20 px-8 py-4 rounded-full text-[10px] uppercase tracking-widest font-black hover:bg-palm hover:text-white transition-all w-full md:w-auto justify-center"
@@ -283,7 +283,7 @@ function App() {
     {/* El Mapa - Altura ajustada para móvil */}
     <div className="w-full h-87.5 md:h-[75vh] grayscale hover:grayscale-0 transition-all duration-1000 shadow-xl rounded-sm overflow-hidden border border-palm/5">
        <iframe 
-         src="https://maps.google.com/maps?q=[ADDRESS]&output=embed4" 
+         src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3837.7846709266782!2d-97.083579!3d15.8679107!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x85b8f7005b6c317d%3A0xb4ce7fc27133988f!2sCasa%20Don%20Jos%C3%A9!5e0!3m2!1ses!2smx!4v1773687957164!5m2!1ses!2smx" 
          width="100%" 
          height="100%" 
          style={{ border: 0 }} 
