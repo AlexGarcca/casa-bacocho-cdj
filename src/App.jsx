@@ -242,25 +242,57 @@ function App() {
         </div>
       </section>
 
-      {/* 6. UBICACIÓN PRIVILEGIADA --- */}
-      <section id="ubicacion" className="py-24 md:py-48 bg-[#FBFBF9] border-t border-palm/5 overflow-hidden">
-        <div className="container mx-auto px-6 md:px-8 grid grid-cols-1 md:grid-cols-2 gap-16 md:gap-32 items-center text-palm relative z-10 font-black tracking-tighter">
-          <motion.div initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} transition={{ duration: 0.8 }} viewport={{ once: true }}>
-            <span className="text-[10px] uppercase tracking-[0.6em] opacity-40 block mb-10 font-sans font-bold">05 / Contacto</span>
-            <h2 className="text-6xl md:text-8xl font-serif mb-12 italic tracking-tighter uppercase font-black leading-tight">Ubicación <br className="hidden md:block" /> Privilegiada</h2>
-            <div className="space-y-10 text-sm font-light text-gray-500 font-sans">
-              <p className="text-palm tracking-[0.3em] uppercase text-xs font-black border-l-2 border-sunset pl-6">Montealban 18, Fracc. Bacocho</p>
-              <p className="max-w-md font-light italic text-gray-400 leading-relaxed">
-                Situada a solo pasos del santuario de tortugas marinas y de la serenidad absoluta de Playa Coral. El equilibrio perfecto entre aislamiento y cercanía.
-              </p>
-              <a href="https://www.google.com/maps/place/Casa+Don+Jos%C3%A9/@15.8679158,-97.0861539,17z/data=!3m1!4b1!4m6!3m5!1s0x85b8f7005b6c317d:0xb4ce7fc27133988f!8m2!3d15.8679107!4d-97.083579!16s%2Fg%2F11w3gnjjvt?entry=ttu&g_ep=EgoyMDI2MDMxMS4wIKXMDSoASAFQAw%3D%3D" target="_blank" rel="noreferrer" className="inline-block border-b-2 border-palm pb-1 text-[11px] uppercase tracking-widest font-black hover:text-sunset transition-all">Trazar Ruta en Maps</a>
-            </div>
-          </motion.div>
-          <div className="h-[50vh] md:h-[75vh] grayscale hover:grayscale-0 transition-all duration-1000 shadow-2xl rounded-sm overflow-hidden border border-palm/5">
-             <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3837.7846709266782!2d-97.083579!3d15.8679107!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x85b8f7005b6c317d%3A0xb4ce7fc27133988f!2sCasa%20Don%20Jos%C3%A9!5e0!3m2!1ses!2smx!4v1773687957164!5m2!1ses!2smx" width="100%" height="100%" style={{ border: 0 }} allowFullScreen="" loading="lazy" />
-          </div>
+      {/* --- 6. UBICACIÓN PRIVILEGIADA (MOBILE OPTIMIZED) --- */}
+<section id="ubicacion" className="py-20 md:py-48 bg-[#FBFBF9] border-t border-palm/5 overflow-hidden">
+  <div className="container mx-auto px-6 md:px-8 flex flex-col md:grid md:grid-cols-2 gap-12 md:gap-32 items-center text-palm relative z-10">
+    
+    {/* Texto de ubicación */}
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }} 
+      whileInView={{ opacity: 1, y: 0 }} 
+      transition={{ duration: 0.8 }} 
+      viewport={{ once: true }}
+      className="w-full text-left"
+    >
+      <span className="text-[10px] uppercase tracking-[0.6em] opacity-40 block mb-6 font-sans font-bold">05 / Contacto</span>
+      <h2 className="text-5xl md:text-8xl font-serif mb-8 italic tracking-tighter uppercase font-black leading-tight">
+        Ubicación <br className="hidden md:block" /> Privilegiada
+      </h2>
+      
+      <div className="space-y-8 text-sm font-light text-gray-500 font-sans">
+        <div className="border-l-2 border-sunset pl-6">
+          <p className="text-palm tracking-[0.2em] uppercase text-xs font-black mb-2">Montealban 18, Fracc. Bacocho</p>
+          <p className="max-w-md font-light italic text-gray-400 leading-relaxed">
+            Situada a pasos del santuario de tortugas marinas y de la serenidad absoluta de Playa Coral. El equilibrio perfecto entre aislamiento y cercanía.
+          </p>
         </div>
-      </section>
+        
+        <div className="pt-4">
+          <a 
+            href="https://www.google.com/maps/dir/?api=1&destination=Montealban+18+Bacocho+Puerto+Escondido" 
+            target="_blank" 
+            rel="noreferrer" 
+            className="inline-flex items-center gap-3 border border-palm/20 px-8 py-4 rounded-full text-[10px] uppercase tracking-widest font-black hover:bg-palm hover:text-white transition-all w-full md:w-auto justify-center"
+          >
+            <MapPin size={14} /> Trazar Ruta en Maps
+          </a>
+        </div>
+      </div>
+    </motion.div>
+
+    {/* El Mapa - Altura ajustada para móvil */}
+    <div className="w-full h-87.5 md:h-[75vh] grayscale hover:grayscale-0 transition-all duration-1000 shadow-xl rounded-sm overflow-hidden border border-palm/5">
+       <iframe 
+         src="https://maps.google.com/maps?q=[ADDRESS]&output=embed4" 
+         width="100%" 
+         height="100%" 
+         style={{ border: 0 }} 
+         allowFullScreen="" 
+         loading="lazy" 
+       />
+    </div>
+  </div>
+</section>
 
       {/* --- LIGHTBOX (Z-200) --- */}
       <AnimatePresence>
