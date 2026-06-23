@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  MapPin, Utensils, Car, BedDouble, Droplets, Camera, Palmtree, Anchor, Music, Compass, Martini, X, Star, ChevronRight, Waves, Quote, Plane, ShieldCheck, SunMedium, CloudSun, Moon, Sun, CloudRain, Cloud, Zap 
+  MapPin, Utensils, BedDouble, Droplets, Music, Compass, Martini, X, ChevronRight, Waves, Plane, ShieldCheck, SunMedium, Moon, Sun, CloudRain, Cloud, Zap, Menu
 } from 'lucide-react'; 
 import { FaWhatsapp, FaInstagram } from 'react-icons/fa';
 import Lenis from 'lenis';
@@ -11,6 +11,8 @@ function App() {
   const [filter, setFilter] = useState('todos');
   const [selectedImage, setSelectedImage] = useState(null);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [showAllImages, setShowAllImages] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   
   const [weather, setWeather] = useState({ temp: 29, condition: 'clear', description: 'Soleado', isNight: false });
 
@@ -61,6 +63,7 @@ function App() {
   };
 
   const galleryImages = [
+    // --- FOTOS ANTERIORES (ORIGINALES) ---
     { id: 1, category: 'habitaciones', title: 'Suite Master (Baño & Closet)', url: '/images/habprinc.jpg' },
     { id: 2, category: 'comunes', title: 'Piscina de Autor', url: '/images/piscina1.jpg' },
     { id: 3, category: 'comunes', title: 'Cocina Integral Pro', url: '/images/Cocina.jpg' },
@@ -68,8 +71,35 @@ function App() {
     { id: 5, category: 'comunes', title: 'Lounge Exterior', url: '/images/piscina2.jpg' },
     { id: 6, category: 'comunes', title: 'Terraza Atardecer', url: '/images/Terraza.jpg' },
     { id: 7, category: 'exteriores', title: 'Fachada y Acceso Privado', url: '/images/est1.jpg' },
-  ];
 
+    // --- NUEVAS FOTOS (EXTERIORES) ---
+    { id: 8, category: 'exteriores', title: 'Fachada Principal', url: '/images/fachada.jpeg' },
+    { id: 9, category: 'exteriores', title: 'Identidad Casa Don José', url: '/images/letrero.jpeg' },
+    { id: 10, category: 'exteriores', title: 'Área de Piscina', url: '/images/alberca1.jpeg' },
+    { id: 11, category: 'exteriores', title: 'Alberca y Espacio Exterior', url: '/images/alberca2.jpeg' },
+    { id: 12, category: 'exteriores', title: 'Terraza Principal', url: '/images/terrasa.jpeg' },
+    { id: 13, category: 'exteriores', title: 'Vista de la Terraza', url: '/images/terraza2.jpeg' },
+    { id: 14, category: 'exteriores', title: 'Espacio Exterior Terraza', url: '/images/terraza3.jpeg' },
+
+    // --- NUEVAS FOTOS (HABITACIONES) ---
+    { id: 15, category: 'habitaciones', title: 'Habitación Principal Amplia', url: '/images/cuartogd.jpeg' },
+    { id: 16, category: 'habitaciones', title: 'Habitación Confort I', url: '/images/cuartopeq.jpeg' },
+    { id: 17, category: 'habitaciones', title: 'Habitación Confort II', url: '/images/cuartopeq2.jpeg' },
+    { id: 18, category: 'habitaciones', title: 'Baño Principal', url: '/images/baño1.jpeg' },
+    { id: 19, category: 'habitaciones', title: 'Baño Secundario', url: '/images/baño2.jpeg' },
+    { id: 20, category: 'habitaciones', title: 'Walk-in Closet', url: '/images/closet.jpeg' },
+    { id: 21, category: 'habitaciones', title: 'Closet Auxiliar', url: '/images/closetpeq.jpeg' },
+
+    // --- NUEVAS FOTOS (ÁREAS COMUNES) ---
+    { id: 22, category: 'comunes', title: 'Cocina Totalmente Equipada', url: '/images/cocina1.jpeg' },
+    { id: 23, category: 'comunes', title: 'Área de Cocina', url: '/images/cocina2.jpeg' },
+    { id: 24, category: 'comunes', title: 'Comedor Principal', url: '/images/comedor.jpeg' },
+    { id: 25, category: 'comunes', title: 'Estancia / Sala Principal', url: '/images/sala1.jpeg' },
+    { id: 26, category: 'comunes', title: 'Detalles de la Estancia', url: '/images/sala2cuadro.jpeg' },
+    { id: 27, category: 'comunes', title: 'Sala de Convivencia', url: '/images/sala3cuadro.jpeg' },
+    { id: 28, category: 'comunes', title: 'Sala con Vista a la Piscina', url: '/images/salavistapiscina.jpeg' }
+  ];
+  
   const filteredImages = filter === 'todos' ? galleryImages : galleryImages.filter(img => img.category === filter);
 
   const revealVar = {
@@ -95,7 +125,7 @@ function App() {
         <FaWhatsapp size={24} />
       </motion.button>
 
-      {/* --- NAV ADAPTATIVO --- */}
+      {/* --- NAV RESPONSIVO --- */}
       <nav className={`fixed top-0 left-0 right-0 z-100 transition-all duration-700 px-6 md:px-8 ${isScrolled ? 'bg-white/95 backdrop-blur-md border-b border-palm/5 py-4' : 'bg-transparent py-8'}`}>
         <div className={`container mx-auto flex justify-between items-center uppercase italic font-light tracking-tighter ${isScrolled ? 'text-palm' : 'text-white'}`}>
           <div className="flex items-center gap-6">
@@ -105,14 +135,35 @@ function App() {
               <span>P. Escondido {weather.temp}°C • {weather.description}</span>
             </div>
           </div>
-          <div className="flex gap-6 md:gap-12 text-[10px] uppercase tracking-[0.2em] md:tracking-[0.4em] font-bold opacity-60 not-italic">
+          
+          {/* Links Escritorio */}
+          <div className="hidden md:flex gap-6 md:gap-12 text-[10px] uppercase tracking-[0.4em] font-bold opacity-60 not-italic">
             <a href="#casa" className="hover:opacity-100 transition-opacity">La Casa</a>
-            <a href="#residencia" className="hidden sm:inline hover:opacity-100 transition-opacity">Residencia</a>
+            <a href="#residencia" className="hover:opacity-100 transition-opacity">Residencia</a>
             <a href="#destino" className="hover:opacity-100 transition-opacity">Destino</a>
           </div>
-          <button onClick={handleBooking} className={`hidden sm:block border px-8 py-3 rounded-full text-[9px] uppercase tracking-[0.3em] font-bold transition-all cursor-pointer not-italic ${isScrolled ? 'border-palm/20 hover:bg-palm hover:text-white' : 'border-white/40 hover:bg-white hover:text-palm'}`}>Booking</button>
+          
+          <button onClick={handleBooking} className={`hidden md:block border px-8 py-3 rounded-full text-[9px] uppercase tracking-[0.3em] font-bold transition-all cursor-pointer not-italic ${isScrolled ? 'border-palm/20 hover:bg-palm hover:text-white' : 'border-white/40 hover:bg-white hover:text-palm'}`}>Booking</button>
+          
+          {/* Botón menú móvil */}
+          <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="block md:hidden cursor-pointer p-2">
+            <Menu size={24} className={isScrolled ? 'text-palm' : 'text-white'} />
+          </button>
         </div>
       </nav>
+
+      {/* --- MENÚ DESPLEGABLE MÓVIL --- */}
+      <AnimatePresence>
+        {isMenuOpen && (
+          <motion.div initial={{ opacity: 0, y: "-100%" }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: "-100%" }} transition={{ duration: 0.5, ease: "easeInOut" }} className="fixed inset-0 z-400 bg-white/98 backdrop-blur-lg flex flex-col items-center justify-center gap-8 md:hidden text-palm">
+            <button onClick={() => setIsMenuOpen(false)} className="absolute top-6 right-6 p-4"><X size={28} /></button>
+            <a href="#casa" onClick={() => setIsMenuOpen(false)} className="font-serif text-3xl italic tracking-wide">La Casa</a>
+            <a href="#residencia" onClick={() => setIsMenuOpen(false)} className="font-serif text-3xl italic tracking-wide">La Residencia</a>
+            <a href="#destino" onClick={() => setIsMenuOpen(false)} className="font-serif text-3xl italic tracking-wide">El Destino</a>
+            <button onClick={() => { setIsMenuOpen(false); handleBooking(); }} className="mt-4 border border-palm px-10 py-4 rounded-full text-[10px] font-bold uppercase tracking-widest">Reservar Ahora</button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* 1. HERO CON VIDEO BACKGROUND --- */}
       <section className="relative h-[90vh] md:h-screen flex flex-col items-center justify-center overflow-hidden">
@@ -124,7 +175,7 @@ function App() {
         </div>
         <div className="container mx-auto px-6 text-center z-10 text-white relative">
           <motion.div initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 1, delay: 0.3 }}>
-            <h1 className="text-[16vw] md:text-[11rem] font-serif leading-[1.2] md:leading-[1.4] uppercase tracking-tighter italic font-light mb-8">
+            <h1 className="text-[14vw] sm:text-[16vw] md:text-[11rem] font-serif leading-[1.2] md:leading-[1.4] uppercase tracking-tighter italic font-light mb-8">
               Casa <br /> Don <span className="md:ml-[2vw]">José</span>
             </h1>
             <div className="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-10 mt-12 md:mt-24">
@@ -142,17 +193,17 @@ function App() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-16 md:gap-24 items-start text-palm">
             <motion.div variants={revealVar} initial="hidden" whileInView="visible" viewport={{ once: true }} className="space-y-8">
               <span className="text-[10px] uppercase tracking-[0.6em] opacity-40 block font-bold">01 / El Concepto</span>
-              <h3 className="font-serif text-4xl md:text-5xl italic leading-tight uppercase font-black">Un refugio <br className="hidden md:block" />de autor.</h3>
+              <h3 className="font-serif text-4xl md:text-5xl italic leading-tight uppercase font-black">Tu hogar <br className="hidden md:block" />en la costa.</h3>
               <p className="text-sm text-gray-400 leading-relaxed font-light font-sans italic">
-                Ubicada en el enclave residencial más exclusivo de Puerto Escondido, CDJ es un santuario donde la arquitectura contemporánea abraza la calidez de la costa oaxaqueña. Cada rincón ha sido diseñado para ofrecer una experiencia de calma absoluta.
+                Ubicada en la tranquilidad de la zona residencial de Bacocho, Casa Don José es un espacio pensado para relajarse en serio. El lugar perfecto para disfrutar de Puerto Escondido con total comodidad, privacidad y esa calidez única de la costa oaxaqueña.
               </p>
             </motion.div>
             <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-y-12 md:gap-y-20 gap-x-12 relative z-10">
               {[
-                { label: "Suite Master", sub: "Refugio personal con baño privado, amplio vestidor y una atmósfera de serenidad total.", icon: <BedDouble size={24} strokeWidth={1}/> },
-                { label: "2 Hab. Dobles", sub: "Espacios de descanso contemporáneo diseñados para el confort absoluto de tus invitados.", icon: <Waves size={24} strokeWidth={1}/> },
-                { label: "2.5 Baños de Lujo", sub: "Dos baños completos con acabados premium y un medio baño social para mayor comodidad.", icon: <Droplets size={24} strokeWidth={1}/> },
-                { label: "Cocina Pro", sub: "Equipada con barra de autor, ideal para cenas íntimas o experiencias culinarias privadas.", icon: <Utensils size={24} strokeWidth={1}/> }
+                { label: "Suite Master", sub: "Un espacio amplio de descanso con baño privado, vestidor y una atmósfera de total tranquilidad.", icon: <BedDouble size={24} strokeWidth={1}/> },
+                { label: "2 Hab. Dobles", sub: "Habitaciones cómodas y frescas, perfectamente equipadas para el confort de tu familia o invitados.", icon: <Waves size={24} strokeWidth={1}/> },
+                { label: "2.5 Baños", sub: "Dos baños completos con acabados modernos y un medio baño en el área común para mayor comodidad.", icon: <Droplets size={24} strokeWidth={1}/> },
+                { label: "Cocina Completa", sub: "Totalmente equipada con todo lo necesario para preparar tus comidas favoritas y disfrutar en convivencia.", icon: <Utensils size={24} strokeWidth={1}/> }
               ].map((item, i) => (
                 <motion.div key={i} initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.1 }} viewport={{ once: true }} className="flex gap-6 items-start group">
                   <div className="opacity-30 group-hover:opacity-100 transition-opacity text-sunset shrink-0">{item.icon}</div>
@@ -167,24 +218,46 @@ function App() {
         </div>
       </section>
 
-      {/* 3. LA RESIDENCIA (BENTO GRID RESPONSIVO) --- */}
+      {/* 3. LA RESIDENCIA (BENTO GRID RESPONSIVO OPTIMIZADO) --- */}
       <section id="residencia" className="py-24 md:py-32 bg-[#F7F5F0]">
         <div className="container mx-auto px-6 md:px-8 text-palm">
-          <div className="flex flex-col md:flex-row justify-between items-end mb-16 md:mb-24 border-b border-palm/10 pb-12">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-16 md:mb-24 border-b border-palm/10 pb-12 gap-8">
             <motion.div variants={revealVar} initial="hidden" whileInView="visible" viewport={{ once: true }}>
                <span className="text-[10px] uppercase tracking-[0.6em] opacity-40 block mb-4 font-bold">02 / Portfolio Visual</span>
                <h2 className="text-5xl md:text-7xl font-serif italic tracking-tighter uppercase font-black">La Residencia</h2>
             </motion.div>
-            <div className="flex flex-wrap gap-6 md:gap-10 text-[9px] uppercase tracking-widest font-black opacity-40 mt-8 md:mt-0 relative z-20">
+            <div className="flex flex-wrap gap-x-6 gap-y-3 md:gap-10 text-[9px] uppercase tracking-widest font-black opacity-40 relative z-20">
               {['todos', 'habitaciones', 'exteriores', 'comunes'].map(cat => (
-                <button key={cat} onClick={() => setFilter(cat)} className={`hover:opacity-100 cursor-pointer transition-all ${filter === cat ? 'opacity-100 border-b-2 border-palm pb-1' : ''}`}>{cat}</button>
+                <button 
+                  key={cat} 
+                  onClick={() => { 
+                    setFilter(cat); 
+                    setShowAllImages(false);
+                  }} 
+                  className={`hover:opacity-100 cursor-pointer transition-all ${filter === cat ? 'opacity-100 border-b-2 border-palm pb-1' : ''}`}
+                >
+                  {cat}
+                </button>
               ))}
             </div>
           </div>
-          <motion.div layout className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-8 relative z-10">
+
+          {/* Grid balanceado para Móviles */}
+          <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-4 md:gap-8 relative z-10">
             <AnimatePresence mode="popLayout">
-              {filteredImages.map((img, i) => (
-                <motion.div layout key={img.id} onClick={() => setSelectedImage(img)} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} transition={{ duration: 0.5 }} className={`relative overflow-hidden cursor-zoom-in group bg-palm shadow-xl ${i === 0 ? 'md:col-span-8 h-[50vh] md:h-[75vh]' : 'md:col-span-4 h-[50vh] md:h-[75vh]'}`}>
+              {filteredImages.slice(0, showAllImages ? filteredImages.length : 6).map((img, i) => (
+                <motion.div 
+                  layout 
+                  key={img.id} 
+                  onClick={() => setSelectedImage(img)} 
+                  initial={{ opacity: 0, scale: 0.9 }} 
+                  animate={{ opacity: 1, scale: 1 }} 
+                  exit={{ opacity: 0, scale: 0.9 }} 
+                  transition={{ duration: 0.5 }} 
+                  className={`relative overflow-hidden cursor-zoom-in group bg-palm shadow-xl h-[40vh] sm:h-[45vh] md:h-[75vh] ${
+                    i === 0 ? 'md:col-span-8' : 'md:col-span-4'
+                  }`}
+                >
                   <img src={img.url} className="w-full h-full object-cover opacity-95 group-hover:opacity-100 group-hover:scale-105 transition-all duration-1000" alt={img.title} />
                   <div className="absolute inset-0 bg-palm/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     <span className="text-white text-[10px] uppercase tracking-[0.5em] font-black border border-white/30 px-8 py-3 backdrop-blur-md">Explorar</span>
@@ -193,6 +266,18 @@ function App() {
               ))}
             </AnimatePresence>
           </motion.div>
+
+          {/* Botón Dinámico */}
+          {filteredImages.length > 6 && (
+            <div className="flex justify-center mt-16 relative z-20">
+              <button
+                onClick={() => setShowAllImages(!showAllImages)}
+                className="inline-flex items-center gap-3 border border-palm/20 px-10 py-4 rounded-full text-[10px] uppercase tracking-[0.3em] font-black hover:bg-palm hover:text-white transition-all cursor-pointer w-full sm:w-auto justify-center"
+              >
+                {showAllImages ? 'Mostrar Menos' : 'Ver más fotos'}
+              </button>
+            </div>
+          )}
         </div>
       </section>
 
@@ -201,11 +286,11 @@ function App() {
         <div className="container mx-auto px-6 md:px-8 relative z-10">
           <div className="max-w-5xl mb-24 md:mb-32">
             <motion.span variants={revealVar} initial="hidden" whileInView="visible" className="text-[10px] uppercase tracking-[0.6em] text-sunset block mb-10 font-bold">03 / El Destino</motion.span>
-            <motion.h2 variants={revealVar} initial="hidden" whileInView="visible" className="font-serif text-5xl md:text-[8.5rem] italic leading-[1.1] md:leading-[0.85] uppercase font-black">Un paraíso <br /><span className="font-light text-white/40 italic">virgen para el</span> <br /><span className="underline decoration-sunset/30 underline-offset-20">alma libre.</span></motion.h2>
+            <motion.h2 variants={revealVar} initial="hidden" whileInView="visible" className="font-serif text-4xl sm:text-5xl md:text-[8.5rem] italic leading-[1.1] md:leading-[0.85] uppercase font-black">Un paraíso <br /><span className="font-light text-white/40 italic">virgen para el</span> <br /><span className="underline decoration-sunset/30 underline-offset-20">alma libre.</span></motion.h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-16 md:gap-24 font-sans">
             {[
-              { title: "Conectividad Global", icon: <Plane size={32} strokeWidth={0.5} />, text: "A solo 5 minutos del Aeropuerto Internacional, tu llegada a la residencia es inmediata. Puerto Escondido está más cerca de lo que imaginas." },
+              { title: "Conectividad Global", icon: <Plane size={32} strokeWidth={0.5} />, text: "A solo 5 minutes del Aeropuerto Internacional, tu llegada a la residencia es inmediata. Puerto Escondido está más cerca de lo que imaginas." },
               { title: "Bacocho Zone", icon: <ShieldCheck size={32} strokeWidth={0.5} />, text: "Ubicada en la joya de la corona: Bacocho. Una zona residencial pacífica, vigilada y exclusiva, alejada del bullicio pero cerca de todo." },
               { title: "Ecosistema Salvaje", icon: <SunMedium size={32} strokeWidth={0.5} />, text: "Vive la magia de la liberación de tortugas marinas y la bioluminiscencia en Manialtepec. Naturaleza en estado puro." }
             ].map((item, i) => (
@@ -242,66 +327,64 @@ function App() {
         </div>
       </section>
 
-      {/* --- 6. UBICACIÓN PRIVILEGIADA (MOBILE OPTIMIZED) --- */}
-<section id="ubicacion" className="py-20 md:py-48 bg-[#FBFBF9] border-t border-palm/5 overflow-hidden">
-  <div className="container mx-auto px-6 md:px-8 flex flex-col md:grid md:grid-cols-2 gap-12 md:gap-32 items-center text-palm relative z-10">
-    
-    {/* Texto de ubicación */}
-    <motion.div 
-      initial={{ opacity: 0, y: 20 }} 
-      whileInView={{ opacity: 1, y: 0 }} 
-      transition={{ duration: 0.8 }} 
-      viewport={{ once: true }}
-      className="w-full text-left"
-    >
-      <span className="text-[10px] uppercase tracking-[0.6em] opacity-40 block mb-6 font-sans font-bold">05 / Contacto</span>
-      <h2 className="text-5xl md:text-8xl font-serif mb-8 italic tracking-tighter uppercase font-black leading-tight">
-        Ubicación <br className="hidden md:block" /> Privilegiada
-      </h2>
-      
-      <div className="space-y-8 text-sm font-light text-gray-500 font-sans">
-        <div className="border-l-2 border-sunset pl-6">
-          <p className="text-palm tracking-[0.2em] uppercase text-xs font-black mb-2">Montealban 18, Fracc. Bacocho</p>
-          <p className="max-w-md font-light italic text-gray-400 leading-relaxed">
-            Situada a pasos del santuario de tortugas marinas y de la serenidad absoluta de Playa Coral. El equilibrio perfecto entre aislamiento y cercanía.
-          </p>
-        </div>
-        
-        <div className="pt-4">
-          <a 
-            href="https://www.google.com/maps/place/Casa+Don+Jos%C3%A9/@15.8679158,-97.0861539,17z/data=!3m1!4b1!4m6!3m5!1s0x85b8f7005b6c317d:0xb4ce7fc27133988f!8m2!3d15.8679107!4d-97.083579!16s%2Fg%2F11w3gnjjvt?entry=ttu&g_ep=EgoyMDI2MDMxMS4wIKXMDSoASAFQAw%3D%3D"  
-            target="_blank" 
-            rel="noreferrer" 
-            className="inline-flex items-center gap-3 border border-palm/20 px-8 py-4 rounded-full text-[10px] uppercase tracking-widest font-black hover:bg-palm hover:text-white transition-all w-full md:w-auto justify-center"
+      {/* --- 6. UBICACIÓN PRIVILEGIADA --- */}
+      <section id="ubicacion" className="py-20 md:py-48 bg-[#FBFBF9] border-t border-palm/5 overflow-hidden">
+        <div className="container mx-auto px-6 md:px-8 flex flex-col md:grid md:grid-cols-2 gap-12 md:gap-32 items-center text-palm relative z-10">
+          
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }} 
+            whileInView={{ opacity: 1, y: 0 }} 
+            transition={{ duration: 0.8 }} 
+            viewport={{ once: true }}
+            className="w-full text-left"
           >
-            <MapPin size={14} /> Trazar Ruta en Maps
-          </a>
+            <span className="text-[10px] uppercase tracking-[0.6em] opacity-40 block mb-6 font-sans font-bold">05 / Contacto</span>
+            <h2 className="text-5xl md:text-8xl font-serif mb-8 italic tracking-tighter uppercase font-black leading-tight">
+              Ubicación <br className="hidden md:block" /> Privilegiada
+            </h2>
+            
+            <div className="space-y-8 text-sm font-light text-gray-500 font-sans">
+              <div className="border-l-2 border-sunset pl-6">
+                <p className="text-palm tracking-[0.2em] uppercase text-xs font-black mb-2">Montealban 18, Fracc. Bacocho</p>
+                <p className="max-w-md font-light italic text-gray-400 leading-relaxed">
+                  Situada a pasos del santuario de tortugas marinas y de la serenidad absoluta de Playa Coral. El equilibrio perfecto entre aislamiento y cercanía.
+                </p>
+              </div>
+              
+              <div className="pt-4">
+                <a 
+                  href="https://www.google.com/maps/place/Casa+Don+Jos%C3%A9/@15.8679158,-97.0861539,17z/data=!3m1!4b1!4m6!3m5!1s0x85b8f7005b6c317d:0xb4ce7fc27133988f!8m2!3d15.8679107!4d-97.083579!16s%2Fg%2F11w3gnjjvt?entry=ttu&g_ep=EgoyMDI2MDMxMS4wIKXMDSoASAFQAw%3D%3D"  
+                  target="_blank" 
+                  rel="noreferrer" 
+                  className="inline-flex items-center gap-3 border border-palm/20 px-8 py-4 rounded-full text-[10px] uppercase tracking-widest font-black hover:bg-palm hover:text-white transition-all w-full md:w-auto justify-center"
+                >
+                  <MapPin size={14} /> Trazar Ruta en Maps
+                </a>
+              </div>
+            </div>
+          </motion.div>
+
+          <div className="w-full h-87.5 md:h-[75vh] grayscale hover:grayscale-0 transition-all duration-1000 shadow-xl rounded-sm overflow-hidden border border-palm/5">
+             <iframe 
+               src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3837.7846709266782!2d-97.083579!3d15.8679107!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x85b8f7005b6c317d%3A0xb4ce7fc27133988f!2sCasa%20Don%20Jos%C3%A9!5e0!3m2!1ses!2smx!4v1773687957164!5m2!1ses!2smx" 
+               width="100%" 
+               height="100%" 
+               style={{ border: 0 }} 
+               allowFullScreen="" 
+               loading="lazy" 
+             />
+          </div>
         </div>
-      </div>
-    </motion.div>
+      </section>
 
-    {/* El Mapa - Altura ajustada para móvil */}
-    <div className="w-full h-87.5 md:h-[75vh] grayscale hover:grayscale-0 transition-all duration-1000 shadow-xl rounded-sm overflow-hidden border border-palm/5">
-       <iframe 
-         src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3837.7846709266782!2d-97.083579!3d15.8679107!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x85b8f7005b6c317d%3A0xb4ce7fc27133988f!2sCasa%20Don%20Jos%C3%A9!5e0!3m2!1ses!2smx!4v1773687957164!5m2!1ses!2smx" 
-         width="100%" 
-         height="100%" 
-         style={{ border: 0 }} 
-         allowFullScreen="" 
-         loading="lazy" 
-       />
-    </div>
-  </div>
-</section>
-
-      {/* --- LIGHTBOX (Z-200) --- */}
+      {/* --- LIGHTBOX MOVILES OPTIMIZADO --- */}
       <AnimatePresence>
         {selectedImage && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSelectedImage(null)} className="fixed inset-0 z-200 bg-white/98 flex items-center justify-center p-6 md:p-12 cursor-zoom-out text-palm uppercase font-black tracking-tighter italic">
-            <button className="absolute top-8 right-8 p-4 opacity-40 hover:opacity-100 transition-opacity"><X size={32} /></button>
-            <motion.div initial={{ y: 20 }} animate={{ y: 0 }} className="text-center max-w-5xl">
-                <img src={selectedImage.url} className="w-full shadow-2xl mb-8 md:mb-12 border border-palm/5" alt={selectedImage.title} />
-                <p className="font-serif text-2xl md:text-4xl italic">{selectedImage.title}</p>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSelectedImage(null)} className="fixed inset-0 z-200 bg-white/98 flex items-center justify-center p-4 md:p-12 cursor-zoom-out text-palm uppercase font-black tracking-tighter italic">
+            <button className="absolute top-4 right-4 p-4 opacity-60 hover:opacity-100 transition-opacity"><X size={28} /></button>
+            <motion.div initial={{ y: 20 }} animate={{ y: 0 }} className="text-center w-full max-w-5xl">
+                <img src={selectedImage.url} className="w-full max-h-[75vh] object-contain shadow-2xl mb-6 md:mb-12 border border-palm/5" alt={selectedImage.title} />
+                <p className="font-serif text-xl md:text-4xl italic px-2">{selectedImage.title}</p>
             </motion.div>
           </motion.div>
         )}
@@ -310,7 +393,7 @@ function App() {
       {/* --- FOOTER --- */}
       <footer className="py-24 md:py-32 bg-white border-t border-palm/5 text-palm text-center relative z-10">
         <div className="container mx-auto px-8">
-          <div className="flex justify-center gap-12 md:gap-16 mb-16 md:mb-20 opacity-20 hover:opacity-100 transition-all duration-500">
+          <div className="flex justify-center gap-12 md:gap-16 mb-16 md:mb-20 opacity-40 hover:opacity-100 transition-all duration-500">
             <a href="https://www.instagram.com/casadonjose_ptoescondido/" target="_blank" rel="noreferrer"><FaInstagram size={32} /></a>
             <button onClick={handleBooking} className="cursor-pointer"><FaWhatsapp size={32} /></button>
           </div>
