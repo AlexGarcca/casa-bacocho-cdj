@@ -134,7 +134,8 @@ function App() {
     // Ejecutar fetch del clima de forma dinámica según el idioma seleccionado
     const fetchWeather = async () => {
       try {
-        const API_KEY = "b5edcdd2b4074f4dc4fe306c5bb17817"; 
+        // --- CAMBIO 1: API KEY OCULTA ---
+        const API_KEY = import.meta.env.VITE_WEATHER_API_KEY; 
         const lat = 15.8625; const lon = -97.0768;
         // Agregamos ${language} al final de la URL de OpenWeatherMap
         const response = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric&lang=${language}`);
@@ -285,7 +286,8 @@ function App() {
       {/* 1. HERO CON VIDEO BACKGROUND --- */}
       <section className="relative h-[90vh] md:h-screen flex flex-col items-center justify-center overflow-hidden">
         <div className="absolute inset-0 z-0">
-          <video autoPlay loop muted playsInline className="w-full h-full object-cover grayscale-20 brightness-70">
+          {/* --- CAMBIO 2: POSTER AGREGADO AL VIDEO --- */}
+          <video autoPlay loop muted playsInline poster="/images/fachada.jpeg" className="w-full h-full object-cover grayscale-20 brightness-70">
             <source src="/videos/atardecer.mp4" type="video/mp4" />
           </video>
           <div className="absolute inset-0 bg-black/20" />
@@ -371,7 +373,9 @@ function App() {
                     i === 0 ? 'md:col-span-8' : 'md:col-span-4'
                   }`}
                 >
-                  <img src={img.url} className="w-full h-full object-cover opacity-95 group-hover:opacity-100 group-hover:scale-105 transition-all duration-1000" alt={img.title} />
+                  {/* --- CAMBIO 3: LAZY LOADING Y ASYNC DECODING --- */}
+                  <img src={img.url} loading="lazy" decoding="async" className="w-full h-full object-cover opacity-95 group-hover:opacity-100 group-hover:scale-105 transition-all duration-1000" alt={img.title} />
+                  
                   <div className="absolute inset-0 bg-palm/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     <span className="text-white text-[10px] uppercase tracking-[0.5em] font-black border border-white/30 px-8 py-3 backdrop-blur-md">{t.explore}</span>
                   </div>
