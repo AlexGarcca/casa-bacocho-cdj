@@ -46,7 +46,7 @@ const translations = {
     vibesTitle: "Puerto Vibes",
     vibesCards: [
       { title: "Cultura & Beats", text: "Desde la mixología refinada en Bacocho hasta el ambiente vibrante de Zicatela y los atardeceres techno en La Punta. Puerto nunca duerme." },
-      { title: "Gastronomía", text: "Disfruta de la pesca del día en cenas de autor frente al mar o el aroma del café de altura oaxaqueño en el mercado tradicional." },
+      { title: "Gastronomy", text: "Disfruta de la pesca del día en cenas de autor frente al mar o el aroma del café de altura oaxaqueño en el mercado tradicional." },
       { title: "Aventura", text: "Surf de clase mundial en Zicatela, avistamiento de ballenas y paseos privados en yate hacia el horizonte infinito del Pacífico desde la Bahía Principal." }
     ],
     discover: "Descubrir",
@@ -118,11 +118,24 @@ function App() {
   const [showAllImages, setShowAllImages] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   
+  // --- ESTADOS PARA EL MODAL DE RESERVAS ---
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [bookingData, setBookingData] = useState({ checkIn: '', checkOut: '', guests: 1 });
+
   // --- NUEVO ESTADO PARA CONTROLAR EL IDIOMA (ESPAÑOL POR DEFECTO) ---
   const [language, setLanguage] = useState('es');
   const t = translations[language];
   
   const [weather, setWeather] = useState({ temp: 29, condition: 'clear', description: 'Soleado', isNight: false });
+
+  // --- LÓGICA PARA BLOQUEAR FECHAS PASADAS ---
+  const getTodayDate = () => {
+    const today = new Date();
+    // Ajuste de zona horaria local para evitar que brinque al día siguiente
+    today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
+    return today.toISOString().split('T')[0];
+  };
+  const todayDate = getTodayDate();
 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 2800);
@@ -131,13 +144,10 @@ function App() {
     requestAnimationFrame(raf);
     window.lenis = lenis;
 
-    // Ejecutar fetch del clima de forma dinámica según el idioma seleccionado
     const fetchWeather = async () => {
       try {
-        // --- CAMBIO 1: API KEY OCULTA ---
         const API_KEY = import.meta.env.VITE_WEATHER_API_KEY; 
         const lat = 15.8625; const lon = -97.0768;
-        // Agregamos ${language} al final de la URL de OpenWeatherMap
         const response = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric&lang=${language}`);
         const data = await response.json();
         if (data.main) {
@@ -155,13 +165,28 @@ function App() {
     const handleScroll = () => setIsScrolled(window.scrollY > 50);
     window.addEventListener('scroll', handleScroll);
     return () => { window.removeEventListener('scroll', handleScroll); clearTimeout(timer); };
-  }, [language]); // Agregamos language como dependencia para recargar la descripción del clima si cambia de idioma
+  }, [language]);
 
   const scrollToTop = () => { if (window.lenis) window.lenis.scrollTo(0); };
   
-  const handleBooking = () => {
-    const message = encodeURIComponent(t.waMessage);
-    window.open(`https://wa.me/529511815020?text=${message}`, '_blank');
+  // --- FUNCIONES DEL MODAL WHATSAPP ---
+  const handleOpenBooking = () => {
+    setIsBookingModalOpen(true);
+  };
+
+  const confirmBooking = (e) => {
+    e.preventDefault(); 
+    
+    // Texto elegante, sobrio y SIN emojis
+    const textoBase = language === 'es' 
+      ? `¡Hola! Me interesa rentar Casa Don José.\n\n*Entrada:* ${bookingData.checkIn}\n*Salida:* ${bookingData.checkOut}\n*Personas:* ${bookingData.guests}\n\n¿Tienen disponibilidad?`
+      : `Hi! I'm interested in renting Casa Don José.\n\n*Check-in:* ${bookingData.checkIn}\n*Check-out:* ${bookingData.checkOut}\n*Guests:* ${bookingData.guests}\n\nIs it available?`;
+
+    // Codificamos los saltos de línea para que WhatsApp los respete sin errores
+    const mensajeCodificado = encodeURIComponent(textoBase);
+
+    window.open(`https://wa.me/529511815020?text=${mensajeCodificado}`, '_blank');
+    setIsBookingModalOpen(false); 
   };
 
   const getWeatherIcon = () => {
@@ -218,11 +243,97 @@ function App() {
         )}
       </AnimatePresence>
 
-      {/* --- WHATSAPP --- */}
-      <motion.button initial={{ scale: 0 }} animate={{ scale: 1 }} whileHover={{ scale: 1.1 }} onClick={handleBooking} className="fixed bottom-6 right-6 md:bottom-8 md:right-8 z-50 bg-[#25D366] text-white p-4 rounded-full shadow-2xl cursor-pointer flex items-center gap-2 group border border-white/20">
+      {/* --- WHATSAPP FLOTANTE --- */}
+      <motion.button initial={{ scale: 0 }} animate={{ scale: 1 }} whileHover={{ scale: 1.1 }} onClick={handleOpenBooking} className="fixed bottom-6 right-6 md:bottom-8 md:right-8 z-50 bg-[#25D366] text-white p-4 rounded-full shadow-2xl cursor-pointer flex items-center gap-2 group border border-white/20">
         <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-500 font-bold whitespace-nowrap px-0 group-hover:px-2 text-[10px] uppercase tracking-widest">{t.reserveBtn}</span>
         <FaWhatsapp size={24} />
       </motion.button>
+
+      {/* --- MODAL DE RESERVA (DISEÑO PREMIUM) --- */}
+      <AnimatePresence>
+        {isBookingModalOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} 
+            className="fixed inset-0 z-600 bg-black/40 backdrop-blur-md flex items-center justify-center p-4"
+          >
+            <motion.div 
+              initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }}
+              className="bg-white text-palm p-8 md:p-10 rounded-2xl shadow-2xl w-full max-w-md relative border border-palm/10"
+            >
+              <button onClick={() => setIsBookingModalOpen(false)} className="absolute top-5 right-5 p-2 text-gray-400 hover:text-palm transition-colors">
+                <X size={24} strokeWidth={1.5} />
+              </button>
+              
+              <h3 className="font-serif text-4xl italic font-black uppercase mb-8 text-center tracking-tight">
+                {language === 'es' ? 'Tu Reserva' : 'Your Booking'}
+              </h3>
+              
+              <form onSubmit={confirmBooking} className="space-y-5 font-sans">
+                {/* Check-in */}
+                <div>
+                  <label className="text-[10px] uppercase tracking-[0.15em] font-bold text-gray-500 mb-2 block">
+                    {language === 'es' ? 'Fecha de Entrada' : 'Check-in Date'}
+                  </label>
+                  <input 
+                    type="date" 
+                    min={todayDate}
+                    required 
+                    className="w-full border border-gray-200 p-4 rounded-lg focus:outline-none focus:border-palm focus:ring-1 focus:ring-palm text-palm font-medium bg-white transition-all"
+                    onChange={(e) => setBookingData({...bookingData, checkIn: e.target.value})}
+                  />
+                </div>
+                
+                {/* Check-out */}
+                <div>
+                  <label className="text-[10px] uppercase tracking-[0.15em] font-bold text-gray-500 mb-2 block">
+                    {language === 'es' ? 'Fecha de Salida' : 'Check-out Date'}
+                  </label>
+                  <input 
+                    type="date" 
+                    min={bookingData.checkIn || todayDate} 
+                    required 
+                    className="w-full border border-gray-200 p-4 rounded-lg focus:outline-none focus:border-palm focus:ring-1 focus:ring-palm text-palm font-medium bg-white transition-all"
+                    onChange={(e) => setBookingData({...bookingData, checkOut: e.target.value})}
+                  />
+                </div>
+                
+                {/* Personas (Con límite de 10) */}
+                <div>
+                  <label className="text-[10px] uppercase tracking-[0.15em] font-bold text-gray-500 mb-2 block">
+                    {language === 'es' ? 'Número de Personas' : 'Number of Guests'}
+                  </label>
+                  <input 
+                    type="number" 
+                    min="1" 
+                    max="10" 
+                    required 
+                    placeholder="Máximo 10 huéspedes"
+                    className="w-full border border-gray-200 p-4 rounded-lg focus:outline-none focus:border-palm focus:ring-1 focus:ring-palm text-palm font-medium bg-white transition-all"
+                    onKeyDown={(e) => {
+                      // Evita que escriban caracteres especiales
+                      if (['e', 'E', '+', '-', '.'].includes(e.key)) e.preventDefault();
+                    }}
+                    onChange={(e) => {
+                      // Asegura que aunque peguen números no pasen del límite
+                      let val = parseInt(e.target.value);
+                      if (val > 10) val = 10;
+                      if (val < 1) val = 1;
+                      setBookingData({...bookingData, guests: val || ''});
+                    }}
+                    value={bookingData.guests}
+                  />
+                </div>
+                
+                {/* Botón Lujo */}
+                <button type="submit" className="w-full bg-palm text-white py-5 rounded-full text-[11px] uppercase tracking-[0.2em] font-bold hover:bg-[#112025] transition-colors mt-8 shadow-lg flex items-center justify-center gap-3">
+                  <FaWhatsapp size={18} />
+                  {language === 'es' ? 'Contactar por WhatsApp' : 'Contact via WhatsApp'}
+                </button>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* --- NAV RESPONSIVO --- */}
       <nav className={`fixed top-0 left-0 right-0 z-100 transition-all duration-700 px-6 md:px-8 ${isScrolled ? 'bg-white/95 backdrop-blur-md border-b border-palm/5 py-4' : 'bg-transparent py-8'}`}>
@@ -251,7 +362,7 @@ function App() {
               <button onClick={() => setLanguage('en')} className={`hover:opacity-100 transition-opacity ${language === 'en' ? 'text-sunset underline underline-offset-4' : ''}`}>EN</button>
             </div>
 
-            <button onClick={handleBooking} className={`border px-8 py-3 rounded-full text-[9px] uppercase tracking-[0.3em] font-bold transition-all cursor-pointer ${isScrolled ? 'border-palm/20 hover:bg-palm hover:text-white' : 'border-white/40 hover:bg-white hover:text-palm'}`}>{t.bookingBtn}</button>
+            <button onClick={handleOpenBooking} className={`border px-8 py-3 rounded-full text-[9px] uppercase tracking-[0.3em] font-bold transition-all cursor-pointer ${isScrolled ? 'border-palm/20 hover:bg-palm hover:text-white' : 'border-white/40 hover:bg-white hover:text-palm'}`}>{t.bookingBtn}</button>
           </div>
           
           {/* Botón menú móvil */}
@@ -278,7 +389,8 @@ function App() {
             <a href="#casa" onClick={() => setIsMenuOpen(false)} className="font-serif text-3xl italic tracking-wide">{t.navHome}</a>
             <a href="#residencia" onClick={() => setIsMenuOpen(false)} className="font-serif text-3xl italic tracking-wide">{t.navResidencia}</a>
             <a href="#destino" onClick={() => setIsMenuOpen(false)} className="font-serif text-3xl italic tracking-wide">{t.navDestinoMovil}</a>
-            <button onClick={() => { setIsMenuOpen(false); handleBooking(); }} className="mt-4 border border-palm px-10 py-4 rounded-full text-[10px] font-bold uppercase tracking-widest">{t.reserveNow}</button>
+            
+            <button onClick={() => { setIsMenuOpen(false); handleOpenBooking(); }} className="mt-4 border border-palm px-10 py-4 rounded-full text-[10px] font-bold uppercase tracking-widest">{t.reserveNow}</button>
           </motion.div>
         )}
       </AnimatePresence>
@@ -286,7 +398,6 @@ function App() {
       {/* 1. HERO CON VIDEO BACKGROUND --- */}
       <section className="relative h-[90vh] md:h-screen flex flex-col items-center justify-center overflow-hidden">
         <div className="absolute inset-0 z-0">
-          {/* --- CAMBIO 2: POSTER AGREGADO AL VIDEO --- */}
           <video autoPlay loop muted playsInline poster="/images/fachada.jpeg" className="w-full h-full object-cover grayscale-20 brightness-70">
             <source src="/videos/atardecer.mp4" type="video/mp4" />
           </video>
@@ -373,7 +484,6 @@ function App() {
                     i === 0 ? 'md:col-span-8' : 'md:col-span-4'
                   }`}
                 >
-                  {/* --- CAMBIO 3: LAZY LOADING Y ASYNC DECODING --- */}
                   <img src={img.url} loading="lazy" decoding="async" className="w-full h-full object-cover opacity-95 group-hover:opacity-100 group-hover:scale-105 transition-all duration-1000" alt={img.title} />
                   
                   <div className="absolute inset-0 bg-palm/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -505,7 +615,7 @@ function App() {
         <div className="container mx-auto px-8">
           <div className="flex justify-center gap-12 md:gap-16 mb-16 md:mb-20 opacity-40 hover:opacity-100 transition-all duration-500">
             <a href="https://www.instagram.com/casadonjose_ptoescondido/" target="_blank" rel="noreferrer"><FaInstagram size={32} /></a>
-            <button onClick={handleBooking} className="cursor-pointer"><FaWhatsapp size={32} /></button>
+            <button onClick={handleOpenBooking} className="cursor-pointer"><FaWhatsapp size={32} /></button>
           </div>
           <p className="text-[9px] uppercase tracking-[0.8em] opacity-30 font-black italic">{t.footerTag}</p>
         </div>
