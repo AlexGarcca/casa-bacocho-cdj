@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  MapPin, Utensils, BedDouble, Droplets, Music, Compass, Martini, X, ChevronRight, Waves, Plane, ShieldCheck, SunMedium, Moon, Sun, CloudRain, Cloud, Zap, Menu, Globe
+  MapPin, Utensils, BedDouble, Droplets, Music, Compass, Martini, X, ChevronRight, Waves, Plane, ShieldCheck, SunMedium, Moon, Sun, CloudRain, Cloud, Zap, Menu, Globe, Star, MessageSquarePlus
 } from 'lucide-react'; 
 import { FaWhatsapp, FaInstagram } from 'react-icons/fa';
 import Lenis from 'lenis';
+import { supabase } from './supabase';
+import { Country, State } from 'country-state-city';
 
-// --- DICCIONARIO DE TRADUCCIONES PARA IDIOMAS ---
+// --- DICCIONARIO DE TRADUCCIONES ---
 const translations = {
   es: {
     loading: "CDJ",
@@ -46,16 +48,17 @@ const translations = {
     vibesTitle: "Puerto Vibes",
     vibesCards: [
       { title: "Cultura & Beats", text: "Desde la mixología refinada en Bacocho hasta el ambiente vibrante de Zicatela y los atardeceres techno en La Punta. Puerto nunca duerme." },
-      { title: "Gastronomy", text: "Disfruta de la pesca del día en cenas de autor frente al mar o el aroma del café de altura oaxaqueño en el mercado tradicional." },
-      { title: "Aventura", text: "Surf de clase mundial en Zicatela, avistamiento de ballenas y paseos privados en yate hacia el horizonte infinito del Pacífico desde la Bahía Principal." }
+      { title: "Gastronomía", text: "Disfruta de la pesca del día en cenas de autor frente al mar o el aroma del café de altura oaxaqueño en el mercado tradicional." },
+      { title: "Aventura", text: "Surf de clase mundial en Zicatela, whale watching, and private yacht charters into the endless Pacific horizon departing from the Main Bay." }
     ],
-    discover: "Descubrir",
-    contactTag: "05 / Contacto",
+    reviewsTag: "05 / Testimonios",
+    reviewsTitle: "Lo que dicen nuestros huéspedes",
+    leaveReviewBtn: "¿Te hospedaste con nosotros? Cuéntanos tu experiencia",
+    contactTag: "06 / Contacto",
     contactTitle: <>Ubicación <br className="hidden md:block" /> Privilegiada</>,
     address: "Montealban 18, Fracc. Bacocho",
     locationDesc: "Situada a pasos del santuario de tortugas marinas y de la serenidad absoluta de Playa Coral. El equilibrio perfecto entre aislamiento y cercanía.",
     mapBtn: "Trazar Ruta en Maps",
-    waMessage: "¡Hola! Me interesa obtener más información para rentar Casa Don José en Bacocho.",
     footerTag: "CDJ • 2026 • Private Residence"
   },
   en: {
@@ -99,13 +102,14 @@ const translations = {
       { title: "Gastronomy", text: "Enjoy the catch of the day at signature oceanfront dinners or the rich aroma of Oaxacan high-altitude coffee at the traditional market." },
       { title: "Adventure", text: "World-class surfing at Zicatela, whale watching, and private yacht charters into the endless Pacific horizon departing from the Main Bay." }
     ],
-    discover: "Discover",
-    contactTag: "05 / Contact",
+    reviewsTag: "05 / Guestbook",
+    reviewsTitle: "Guest Experiences",
+    leaveReviewBtn: "Have you stayed with us? Share your experience",
+    contactTag: "06 / Contact",
     contactTitle: <>Prime <br className="hidden md:block" /> Location</>,
     address: "Montealban 18, Fracc. Bacocho",
     locationDesc: "Located steps away from the sea turtle sanctuary and the absolute serenity of Coral Beach. The perfect equilibrium between isolation and proximity.",
     mapBtn: "Get Directions on Maps",
-    waMessage: "Hi! I am interested in getting more information about renting Casa Don José in Bacocho.",
     footerTag: "CDJ • 2026 • Private Residence"
   }
 };
@@ -118,20 +122,33 @@ function App() {
   const [showAllImages, setShowAllImages] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   
-  // --- ESTADOS PARA EL MODAL DE RESERVAS ---
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [bookingData, setBookingData] = useState({ checkIn: '', checkOut: '', guests: 1 });
 
-  // --- NUEVO ESTADO PARA CONTROLAR EL IDIOMA (ESPAÑOL POR DEFECTO) ---
+  const [reviews, setReviews] = useState([]);
+  const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
+  
+  const countries = Country.getAllCountries();
+  const [selectedCountryIso, setSelectedCountryIso] = useState('MX'); 
+  const [states, setStates] = useState(State.getStatesOfCountry('MX'));
+
+  const [feedbackData, setFeedbackData] = useState({ 
+    firstName: '', 
+    lastName: '', 
+    countryName: 'Mexico', 
+    stateName: 'Oaxaca', 
+    rating: 5, 
+    comment: '' 
+  });
+  
+  const [feedbackStatus, setFeedbackStatus] = useState('idle');
+
   const [language, setLanguage] = useState('es');
   const t = translations[language];
-  
   const [weather, setWeather] = useState({ temp: 29, condition: 'clear', description: 'Soleado', isNight: false });
 
-  // --- LÓGICA PARA BLOQUEAR FECHAS PASADAS ---
   const getTodayDate = () => {
     const today = new Date();
-    // Ajuste de zona horaria local para evitar que brinque al día siguiente
     today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
     return today.toISOString().split('T')[0];
   };
@@ -162,31 +179,140 @@ function App() {
     };
     fetchWeather();
 
+    const fetchReviews = async () => {
+      const { data, error } = await supabase
+        .from('reviews')
+        .select('*')
+        .eq('status', 'approved')
+        .order('created_at', { ascending: false });
+      
+      if (!error && data) {
+        setReviews(data);
+      }
+    };
+    fetchReviews();
+
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('feedback') === 'true') {
+      setIsFeedbackModalOpen(true);
+    }
+
     const handleScroll = () => setIsScrolled(window.scrollY > 50);
     window.addEventListener('scroll', handleScroll);
     return () => { window.removeEventListener('scroll', handleScroll); clearTimeout(timer); };
   }, [language]);
 
   const scrollToTop = () => { if (window.lenis) window.lenis.scrollTo(0); };
-  
-  // --- FUNCIONES DEL MODAL WHATSAPP ---
-  const handleOpenBooking = () => {
-    setIsBookingModalOpen(true);
-  };
+  const handleOpenBooking = () => setIsBookingModalOpen(true);
 
   const confirmBooking = (e) => {
     e.preventDefault(); 
-    
-    // Texto elegante, sobrio y SIN emojis
     const textoBase = language === 'es' 
       ? `¡Hola! Me interesa rentar Casa Don José.\n\n*Entrada:* ${bookingData.checkIn}\n*Salida:* ${bookingData.checkOut}\n*Personas:* ${bookingData.guests}\n\n¿Tienen disponibilidad?`
       : `Hi! I'm interested in renting Casa Don José.\n\n*Check-in:* ${bookingData.checkIn}\n*Check-out:* ${bookingData.checkOut}\n*Guests:* ${bookingData.guests}\n\nIs it available?`;
-
-    // Codificamos los saltos de línea para que WhatsApp los respete sin errores
     const mensajeCodificado = encodeURIComponent(textoBase);
-
     window.open(`https://wa.me/529511815020?text=${mensajeCodificado}`, '_blank');
     setIsBookingModalOpen(false); 
+  };
+
+  const submitFeedback = async (e) => {
+    e.preventDefault();
+    setFeedbackStatus('submitting');
+    
+    try {
+      const fullName = `${feedbackData.firstName.trim()} ${feedbackData.lastName.trim()}`;
+      const fullLocation = `${feedbackData.stateName}, ${feedbackData.countryName}`;
+      const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+
+      // ¡ALERTA NUEVA PARA DETECTAR EL PROBLEMA EXACTO!
+      if (!GEMINI_API_KEY) {
+        alert("⚠️ ATENCIÓN: No se está detectando tu llave de Gemini. \n1. Revisa que el archivo .env esté en la carpeta principal. \n2. Detén la terminal y vuelve a poner 'npm run dev'.");
+      }
+
+      let finalEs = feedbackData.comment;
+      let finalEn = feedbackData.comment; 
+
+      if (GEMINI_API_KEY) {
+        const prompt = `Eres un traductor profesional de un hotel de lujo.
+        Analiza el siguiente comentario del huésped sin importar en qué idioma esté escrito originalmente.
+        Genera DOS versiones del comentario: una en español perfecto y otra en inglés elegante.
+        
+        REGLA ESTRICTA: Tu respuesta debe ser ÚNICAMENTE un objeto JSON. No agregues markdown ni comillas invertidas. Usa este formato exacto:
+        {
+          "es": "Aquí va el comentario en español",
+          "en": "Aquí va el comentario en inglés"
+        }
+
+        Comentario del huésped: "${feedbackData.comment}"`;
+
+        const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { 
+              temperature: 0.1, 
+              response_mime_type: "application/json"
+            },
+            safetySettings: [
+              { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+              { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+              { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+              { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
+            ]
+          })
+        });
+
+        if (geminiRes.ok) {
+          const geminiData = await geminiRes.json();
+          if (geminiData.candidates && geminiData.candidates.length > 0) {
+            let rawText = geminiData.candidates[0].content.parts[0].text;
+            console.log("🔥 IA RESPONDIÓ:", rawText); 
+            
+            const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+            
+            if (jsonMatch) {
+              try {
+                const traduccion = JSON.parse(jsonMatch[0]);
+                if (traduccion.es) finalEs = traduccion.es;
+                if (traduccion.en) finalEn = traduccion.en;
+              } catch (parseError) {
+                console.error("Error parseando el JSON extraído.", parseError);
+              }
+            }
+          }
+        }
+      }
+
+      const { error } = await supabase
+        .from('reviews')
+        .insert([
+          { 
+            name: fullName, 
+            location: fullLocation, 
+            rating: feedbackData.rating, 
+            comment_es: finalEs, 
+            comment_en: finalEn, 
+            status: 'pending' 
+          }
+        ]);
+
+      if (!error) {
+        setFeedbackStatus('success');
+        setTimeout(() => {
+          setIsFeedbackModalOpen(false);
+          setFeedbackStatus('idle');
+          setFeedbackData({...feedbackData, comment: ''});
+        }, 3000);
+      } else {
+        throw new Error(`Error de Supabase: ${error.message}`);
+      }
+
+    } catch (err) {
+      console.error("❌ ERROR AL ENVIAR RESEÑA:", err);
+      setFeedbackStatus('idle');
+      alert("Hubo un error de conexión con la base de datos. Por favor intenta de nuevo.");
+    }
   };
 
   const getWeatherIcon = () => {
@@ -223,18 +349,12 @@ function App() {
     { id: 21, category: 'comunes', title: language === 'es' ? 'Sala con Vista a la Piscina' : 'Living Room with Pool View', url: '/images/salavistapiscina.jpeg' },
     { id: 22, category: 'exteriores', title: language === 'es' ? 'Estacionamiento privado para dos vehiculos' : 'Private Parking for Two Vehicles', url: '/images/est1.jpg' }
   ];
-  
   const filteredImages = filter === 'todos' ? galleryImages : galleryImages.filter(img => img.category === filter);
-
-  const revealVar = {
-    hidden: { opacity: 0, y: 30 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: "easeOut" } }
-  };
+  const revealVar = { hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: "easeOut" } } };
 
   return (
     <div className="min-h-screen bg-[#FBFBF9] font-sans text-palm selection:bg-palm selection:text-white overflow-x-hidden">
       
-      {/* --- PRELOADER --- */}
       <AnimatePresence>
         {loading && (
           <motion.div key="preloader" initial={{ opacity: 1 }} exit={{ y: "-100%" }} transition={{ duration: 1.2 }} className="fixed inset-0 z-500 bg-[#FBFBF9] flex flex-col items-center justify-center">
@@ -243,99 +363,117 @@ function App() {
         )}
       </AnimatePresence>
 
-      {/* --- WHATSAPP FLOTANTE --- */}
       <motion.button initial={{ scale: 0 }} animate={{ scale: 1 }} whileHover={{ scale: 1.1 }} onClick={handleOpenBooking} className="fixed bottom-6 right-6 md:bottom-8 md:right-8 z-50 bg-[#25D366] text-white p-4 rounded-full shadow-2xl cursor-pointer flex items-center gap-2 group border border-white/20">
         <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-500 font-bold whitespace-nowrap px-0 group-hover:px-2 text-[10px] uppercase tracking-widest">{t.reserveBtn}</span>
         <FaWhatsapp size={24} />
       </motion.button>
 
-      {/* --- MODAL DE RESERVA (DISEÑO PREMIUM) --- */}
       <AnimatePresence>
-        {isBookingModalOpen && (
-          <motion.div 
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} 
-            className="fixed inset-0 z-600 bg-black/40 backdrop-blur-md flex items-center justify-center p-4"
-          >
-            <motion.div 
-              initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }}
-              className="bg-white text-palm p-8 md:p-10 rounded-2xl shadow-2xl w-full max-w-md relative border border-palm/10"
-            >
-              <button onClick={() => setIsBookingModalOpen(false)} className="absolute top-5 right-5 p-2 text-gray-400 hover:text-palm transition-colors">
+        {isFeedbackModalOpen && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-600 bg-black/40 backdrop-blur-md flex items-center justify-center p-4">
+            <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }} className="bg-white text-palm p-8 md:p-10 rounded-2xl shadow-2xl w-full max-w-lg relative border border-palm/10 max-h-[90vh] overflow-y-auto">
+              <button onClick={() => setIsFeedbackModalOpen(false)} className="absolute top-5 right-5 p-2 text-gray-400 hover:text-palm transition-colors">
                 <X size={24} strokeWidth={1.5} />
               </button>
               
-              <h3 className="font-serif text-4xl italic font-black uppercase mb-8 text-center tracking-tight">
-                {language === 'es' ? 'Tu Reserva' : 'Your Booking'}
+              <h3 className="font-serif text-3xl italic font-black uppercase mb-2 text-center tracking-tight">
+                {language === 'es' ? 'Tu Experiencia' : 'Your Experience'}
               </h3>
-              
-              <form onSubmit={confirmBooking} className="space-y-5 font-sans">
-                {/* Check-in */}
-                <div>
-                  <label className="text-[10px] uppercase tracking-[0.15em] font-bold text-gray-500 mb-2 block">
-                    {language === 'es' ? 'Fecha de Entrada' : 'Check-in Date'}
-                  </label>
-                  <input 
-                    type="date" 
-                    min={todayDate}
-                    required 
-                    className="w-full border border-gray-200 p-4 rounded-lg focus:outline-none focus:border-palm focus:ring-1 focus:ring-palm text-palm font-medium bg-white transition-all"
-                    onChange={(e) => setBookingData({...bookingData, checkIn: e.target.value})}
-                  />
+              <p className="text-center text-xs text-gray-400 mb-8 uppercase tracking-widest">Casa Don José</p>
+
+              {feedbackStatus === 'success' ? (
+                <div className="text-center py-10">
+                  <div className="w-16 h-16 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4"><ShieldCheck size={32} /></div>
+                  <h4 className="font-serif text-2xl italic font-black uppercase">¡Gracias!</h4>
+                  <p className="text-sm text-gray-500 mt-2">Tu reseña ha sido enviada con éxito.</p>
                 </div>
-                
-                {/* Check-out */}
-                <div>
-                  <label className="text-[10px] uppercase tracking-[0.15em] font-bold text-gray-500 mb-2 block">
-                    {language === 'es' ? 'Fecha de Salida' : 'Check-out Date'}
-                  </label>
-                  <input 
-                    type="date" 
-                    min={bookingData.checkIn || todayDate} 
-                    required 
-                    className="w-full border border-gray-200 p-4 rounded-lg focus:outline-none focus:border-palm focus:ring-1 focus:ring-palm text-palm font-medium bg-white transition-all"
-                    onChange={(e) => setBookingData({...bookingData, checkOut: e.target.value})}
-                  />
-                </div>
-                
-                {/* Personas (Con límite de 10) */}
-                <div>
-                  <label className="text-[10px] uppercase tracking-[0.15em] font-bold text-gray-500 mb-2 block">
-                    {language === 'es' ? 'Número de Personas' : 'Number of Guests'}
-                  </label>
-                  <input 
-                    type="number" 
-                    min="1" 
-                    max="10" 
-                    required 
-                    placeholder="Máximo 10 huéspedes"
-                    className="w-full border border-gray-200 p-4 rounded-lg focus:outline-none focus:border-palm focus:ring-1 focus:ring-palm text-palm font-medium bg-white transition-all"
-                    onKeyDown={(e) => {
-                      // Evita que escriban caracteres especiales
-                      if (['e', 'E', '+', '-', '.'].includes(e.key)) e.preventDefault();
-                    }}
-                    onChange={(e) => {
-                      // Asegura que aunque peguen números no pasen del límite
-                      let val = parseInt(e.target.value);
-                      if (val > 10) val = 10;
-                      if (val < 1) val = 1;
-                      setBookingData({...bookingData, guests: val || ''});
-                    }}
-                    value={bookingData.guests}
-                  />
-                </div>
-                
-                {/* Botón Lujo */}
-                <button type="submit" className="w-full bg-palm text-white py-5 rounded-full text-[11px] uppercase tracking-[0.2em] font-bold hover:bg-[#112025] transition-colors mt-8 shadow-lg flex items-center justify-center gap-3">
-                  <FaWhatsapp size={18} />
-                  {language === 'es' ? 'Contactar por WhatsApp' : 'Contact via WhatsApp'}
-                </button>
-              </form>
+              ) : (
+                <form onSubmit={submitFeedback} className="space-y-4 font-sans">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-[10px] uppercase tracking-[0.15em] font-bold text-gray-500 mb-2 block">{language === 'es' ? 'Nombre' : 'First Name'}</label>
+                      <input type="text" required maxLength="30" placeholder="Ej. Carlos" className="w-full border border-gray-200 p-3.5 rounded-lg focus:outline-none focus:border-palm text-palm text-sm font-medium bg-white"
+                        onChange={(e) => setFeedbackData({...feedbackData, firstName: e.target.value})} />
+                    </div>
+                    <div>
+                      <label className="text-[10px] uppercase tracking-[0.15em] font-bold text-gray-500 mb-2 block">{language === 'es' ? 'Apellido' : 'Last Name'}</label>
+                      <input type="text" required maxLength="30" placeholder="Ej. Slim" className="w-full border border-gray-200 p-3.5 rounded-lg focus:outline-none focus:border-palm text-palm text-sm font-medium bg-white"
+                        onChange={(e) => setFeedbackData({...feedbackData, lastName: e.target.value})} />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-[10px] uppercase tracking-[0.15em] font-bold text-gray-500 mb-2 block">{language === 'es' ? 'País' : 'Country'}</label>
+                      <select 
+                        className="w-full border border-gray-200 p-3.5 rounded-lg focus:outline-none focus:border-palm text-palm text-sm font-medium bg-white cursor-pointer"
+                        value={selectedCountryIso}
+                        onChange={(e) => {
+                          const iso = e.target.value;
+                          setSelectedCountryIso(iso);
+                          const countryObj = countries.find(c => c.isoCode === iso);
+                          const countryStates = State.getStatesOfCountry(iso);
+                          setStates(countryStates);
+                          setFeedbackData({
+                            ...feedbackData, 
+                            countryName: countryObj ? countryObj.name : '',
+                            stateName: countryStates.length > 0 ? countryStates[0].name : ''
+                          });
+                        }}
+                      >
+                        {countries.map(c => (
+                          <option key={c.isoCode} value={c.isoCode}>{c.name}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] uppercase tracking-[0.15em] font-bold text-gray-500 mb-2 block">{language === 'es' ? 'Estado / Región' : 'State / Region'}</label>
+                      <select 
+                        className="w-full border border-gray-200 p-3.5 rounded-lg focus:outline-none focus:border-palm text-palm text-sm font-medium bg-white cursor-pointer"
+                        value={feedbackData.stateName}
+                        onChange={(e) => setFeedbackData({...feedbackData, stateName: e.target.value})}
+                      >
+                        {states.length > 0 ? (
+                          states.map(s => (
+                            <option key={s.isoCode || s.name} value={s.name}>{s.name}</option>
+                          ))
+                        ) : (
+                          <option value="N/A">N/A</option>
+                        )}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] uppercase tracking-[0.15em] font-bold text-gray-500 mb-2 block">{language === 'es' ? 'Calificación' : 'Rating'}</label>
+                    <div className="flex gap-2 justify-center py-2">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star key={star} size={28} className="cursor-pointer transition-colors"
+                          onClick={() => setFeedbackData({...feedbackData, rating: star})}
+                          fill={feedbackData.rating >= star ? '#F59E0B' : 'none'} color={feedbackData.rating >= star ? '#F59E0B' : '#D1D5DB'} />
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] uppercase tracking-[0.15em] font-bold text-gray-500 mb-2 block">{language === 'es' ? 'Tu Comentario' : 'Your Comment'}</label>
+                    <textarea required rows="3" maxLength="250" placeholder={language === 'es' ? "¿Qué te pareció tu estancia?" : "How was your stay?"} className="w-full border border-gray-200 p-3.5 rounded-lg focus:outline-none focus:border-palm text-palm text-sm font-medium bg-white resize-none"
+                      onChange={(e) => setFeedbackData({...feedbackData, comment: e.target.value})}></textarea>
+                  </div>
+
+                  <button type="submit" disabled={feedbackStatus === 'submitting'} className="w-full bg-palm text-white py-4 rounded-full text-[11px] uppercase tracking-[0.2em] font-bold hover:bg-[#112025] transition-colors mt-6 shadow-lg flex items-center justify-center gap-3 cursor-pointer">
+                    {feedbackStatus === 'submitting' 
+                      ? (language === 'es' ? 'Enviando...' : 'Sending...') 
+                      : (language === 'es' ? 'Enviar Reseña' : 'Submit Review')}
+                  </button>
+                </form>
+              )}
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* --- NAV RESPONSIVO --- */}
       <nav className={`fixed top-0 left-0 right-0 z-100 transition-all duration-700 px-6 md:px-8 ${isScrolled ? 'bg-white/95 backdrop-blur-md border-b border-palm/5 py-4' : 'bg-transparent py-8'}`}>
         <div className={`container mx-auto flex justify-between items-center uppercase italic font-light tracking-tighter ${isScrolled ? 'text-palm' : 'text-white'}`}>
           <div className="flex items-center gap-6">
@@ -346,7 +484,6 @@ function App() {
             </div>
           </div>
           
-          {/* Links Escritorio */}
           <div className="hidden md:flex gap-6 md:gap-12 text-[10px] uppercase tracking-[0.4em] font-bold opacity-60 not-italic">
             <a href="#casa" className="hover:opacity-100 transition-opacity">{t.navHome}</a>
             <a href="#residencia" className="hover:opacity-100 transition-opacity">{t.navResidencia}</a>
@@ -354,48 +491,39 @@ function App() {
           </div>
           
           <div className="hidden md:flex items-center gap-6 not-italic">
-            {/* --- INTERRUPTOR DE IDIOMA MINIMALISTA (ESCRITORIO) --- */}
             <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest opacity-60 border-r pr-6 border-palm/10">
               <Globe size={12} className="opacity-70" />
               <button onClick={() => setLanguage('es')} className={`hover:opacity-100 transition-opacity ${language === 'es' ? 'text-sunset underline underline-offset-4' : ''}`}>ES</button>
               <span className="opacity-30">|</span>
               <button onClick={() => setLanguage('en')} className={`hover:opacity-100 transition-opacity ${language === 'en' ? 'text-sunset underline underline-offset-4' : ''}`}>EN</button>
             </div>
-
             <button onClick={handleOpenBooking} className={`border px-8 py-3 rounded-full text-[9px] uppercase tracking-[0.3em] font-bold transition-all cursor-pointer ${isScrolled ? 'border-palm/20 hover:bg-palm hover:text-white' : 'border-white/40 hover:bg-white hover:text-palm'}`}>{t.bookingBtn}</button>
           </div>
           
-          {/* Botón menú móvil */}
           <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="block md:hidden cursor-pointer p-2">
             <Menu size={24} className={isScrolled ? 'text-palm' : 'text-white'} />
           </button>
         </div>
       </nav>
 
-      {/* --- MENÚ DESPLEGABLE MÓVIL --- */}
       <AnimatePresence>
         {isMenuOpen && (
           <motion.div initial={{ opacity: 0, y: "-100%" }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: "-100%" }} transition={{ duration: 0.5, ease: "easeInOut" }} className="fixed inset-0 z-400 bg-white/98 backdrop-blur-lg flex flex-col items-center justify-center gap-8 md:hidden text-palm">
             <button onClick={() => setIsMenuOpen(false)} className="absolute top-6 right-6 p-4"><X size={28} /></button>
-            
-            {/* --- INTERRUPTOR DE IDIOMA DENTRO DEL MENÚ MÓVIL --- */}
             <div className="flex items-center gap-4 text-xs font-bold uppercase tracking-widest mb-4 border border-palm/10 px-6 py-3 rounded-full bg-palm/5">
               <Globe size={14} className="text-sunset" />
               <button onClick={() => setLanguage('es')} className={language === 'es' ? 'text-sunset underline underline-offset-4 font-black' : 'opacity-50'}>Español</button>
               <span className="opacity-30">|</span>
               <button onClick={() => setLanguage('en')} className={language === 'en' ? 'text-sunset underline underline-offset-4 font-black' : 'opacity-50'}>English</button>
             </div>
-
             <a href="#casa" onClick={() => setIsMenuOpen(false)} className="font-serif text-3xl italic tracking-wide">{t.navHome}</a>
             <a href="#residencia" onClick={() => setIsMenuOpen(false)} className="font-serif text-3xl italic tracking-wide">{t.navResidencia}</a>
             <a href="#destino" onClick={() => setIsMenuOpen(false)} className="font-serif text-3xl italic tracking-wide">{t.navDestinoMovil}</a>
-            
             <button onClick={() => { setIsMenuOpen(false); handleOpenBooking(); }} className="mt-4 border border-palm px-10 py-4 rounded-full text-[10px] font-bold uppercase tracking-widest">{t.reserveNow}</button>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* 1. HERO CON VIDEO BACKGROUND --- */}
       <section className="relative h-[90vh] md:h-screen flex flex-col items-center justify-center overflow-hidden">
         <div className="absolute inset-0 z-0">
           <video autoPlay loop muted playsInline poster="/images/fachada.jpeg" className="w-full h-full object-cover grayscale-20 brightness-70">
@@ -417,16 +545,13 @@ function App() {
         </div>
       </section>
 
-      {/* 2. LA CASA & AMENIDADES --- */}
       <section id="casa" className="py-24 md:py-40 bg-white border-y border-palm/5">
         <div className="container mx-auto px-6 md:px-8 relative">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-16 md:gap-24 items-start text-palm">
             <motion.div variants={revealVar} initial="hidden" whileInView="visible" viewport={{ once: true }} className="space-y-8">
               <span className="text-[10px] uppercase tracking-[0.6em] opacity-40 block font-bold">{t.conceptTag}</span>
               <h3 className="font-serif text-4xl md:text-5xl italic leading-tight uppercase font-black">{t.conceptTitle}</h3>
-              <p className="text-sm text-gray-400 leading-relaxed font-light font-sans italic">
-                {t.conceptDesc}
-              </p>
+              <p className="text-sm text-gray-400 leading-relaxed font-light font-sans italic">{t.conceptDesc}</p>
             </motion.div>
             <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-y-12 md:gap-y-20 gap-x-12 relative z-10">
               {t.amenities.map((item, i) => (
@@ -445,7 +570,6 @@ function App() {
         </div>
       </section>
 
-      {/* 3. LA RESIDENCIA --- */}
       <section id="residencia" className="py-24 md:py-32 bg-[#F7F5F0]">
         <div className="container mx-auto px-6 md:px-8 text-palm">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-16 md:mb-24 border-b border-palm/10 pb-12 gap-8">
@@ -455,14 +579,7 @@ function App() {
             </motion.div>
             <div className="flex flex-wrap gap-x-6 gap-y-3 md:gap-10 text-[9px] uppercase tracking-widest font-black opacity-40 relative z-20">
               {['todos', 'habitaciones', 'exteriores', 'comunes'].map(cat => (
-                <button 
-                  key={cat} 
-                  onClick={() => { 
-                    setFilter(cat); 
-                    setShowAllImages(false);
-                  }} 
-                  className={`hover:opacity-100 cursor-pointer transition-all ${filter === cat ? 'opacity-100 border-b-2 border-palm pb-1' : ''}`}
-                >
+                <button key={cat} onClick={() => { setFilter(cat); setShowAllImages(false); }} className={`hover:opacity-100 cursor-pointer transition-all ${filter === cat ? 'opacity-100 border-b-2 border-palm pb-1' : ''}`}>
                   {t.cats[cat]}
                 </button>
               ))}
@@ -472,20 +589,8 @@ function App() {
           <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-4 md:gap-8 relative z-10">
             <AnimatePresence mode="popLayout">
               {filteredImages.slice(0, showAllImages ? filteredImages.length : 6).map((img, i) => (
-                <motion.div 
-                  layout 
-                  key={img.id} 
-                  onClick={() => setSelectedImage(img)} 
-                  initial={{ opacity: 0, scale: 0.9 }} 
-                  animate={{ opacity: 1, scale: 1 }} 
-                  exit={{ opacity: 0, scale: 0.9 }} 
-                  transition={{ duration: 0.5 }} 
-                  className={`relative overflow-hidden cursor-zoom-in group bg-palm shadow-xl h-[40vh] sm:h-[45vh] md:h-[75vh] ${
-                    i === 0 ? 'md:col-span-8' : 'md:col-span-4'
-                  }`}
-                >
+                <motion.div layout key={img.id} onClick={() => setSelectedImage(img)} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} transition={{ duration: 0.5 }} className={`relative overflow-hidden cursor-zoom-in group bg-palm shadow-xl h-[40vh] sm:h-[45vh] md:h-[75vh] ${i === 0 ? 'md:col-span-8' : 'md:col-span-4'}`}>
                   <img src={img.url} loading="lazy" decoding="async" className="w-full h-full object-cover opacity-95 group-hover:opacity-100 group-hover:scale-105 transition-all duration-1000" alt={img.title} />
-                  
                   <div className="absolute inset-0 bg-palm/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     <span className="text-white text-[10px] uppercase tracking-[0.5em] font-black border border-white/30 px-8 py-3 backdrop-blur-md">{t.explore}</span>
                   </div>
@@ -496,10 +601,7 @@ function App() {
 
           {filteredImages.length > 6 && (
             <div className="flex justify-center mt-16 relative z-20">
-              <button
-                onClick={() => setShowAllImages(!showAllImages)}
-                className="inline-flex items-center gap-3 border border-palm/20 px-10 py-4 rounded-full text-[10px] uppercase tracking-[0.3em] font-black hover:bg-palm hover:text-white transition-all cursor-pointer w-full sm:w-auto justify-center"
-              >
+              <button onClick={() => setShowAllImages(!showAllImages)} className="inline-flex items-center gap-3 border border-palm/20 px-10 py-4 rounded-full text-[10px] uppercase tracking-[0.3em] font-black hover:bg-palm hover:text-white transition-all cursor-pointer w-full sm:w-auto justify-center">
                 {showAllImages ? t.showLess : t.showMore}
               </button>
             </div>
@@ -507,7 +609,6 @@ function App() {
         </div>
       </section>
 
-      {/* 4. EL DESTINO --- */}
       <section id="destino" className="py-24 md:py-48 bg-[#1A1A1A] text-white relative overflow-hidden">
         <div className="container mx-auto px-6 md:px-8 relative z-10">
           <div className="max-w-5xl mb-24 md:mb-32">
@@ -529,7 +630,6 @@ function App() {
         <h3 className="absolute -bottom-10 -right-20 text-[25vw] font-black text-white/2 select-none uppercase leading-none italic hidden md:block">Oaxaca</h3>
       </section>
 
-      {/* 5. PUERTO VIBES --- */}
       <section className="py-24 md:py-40 bg-white text-palm">
         <div className="container mx-auto px-6 md:px-8 text-center">
           <span className="text-[10px] uppercase tracking-[0.6em] opacity-40 block mb-4 font-bold">{t.vibesTag}</span>
@@ -549,55 +649,75 @@ function App() {
         </div>
       </section>
 
-      {/* --- 6. UBICACIÓN PRIVILEGIADA --- */}
+      <section className="py-24 md:py-40 bg-[#F7F5F0] text-palm border-t border-palm/5">
+        <div className="container mx-auto px-6 md:px-8">
+          <div className="text-center mb-16 md:mb-20">
+            <span className="text-[10px] uppercase tracking-[0.6em] opacity-40 block mb-4 font-bold">{t.reviewsTag}</span>
+            <h2 className="text-5xl md:text-7xl font-serif italic tracking-tighter uppercase font-black">{t.reviewsTitle}</h2>
+          </div>
+          
+          {reviews.length > 0 ? (
+            <div className="flex overflow-x-auto gap-8 pb-12 snap-x snap-mandatory hide-scrollbar">
+              {reviews.map((rev) => (
+                <div key={rev.id} className="min-w-[85vw] md:min-w-105 snap-center bg-white p-10 md:p-12 rounded-xl shadow-lg border border-palm/5 flex flex-col justify-between">
+                  <div>
+                    <div className="flex gap-1 mb-6 text-[#F59E0B]">
+                      {[...Array(rev.rating)].map((_, i) => <Star key={i} size={16} fill="currentColor" />)}
+                    </div>
+                    <p className="font-serif text-xl md:text-2xl italic font-light leading-relaxed text-palm/80 mb-8">
+                      "{language === 'es' ? rev.comment_es : rev.comment_en}"
+                    </p>
+                  </div>
+                  <div className="border-t border-palm/10 pt-6 mt-auto">
+                    <p className="font-serif text-base tracking-wide font-bold text-palm mb-0.5">{rev.name}</p>
+                    <p className="text-[10px] uppercase tracking-[0.2em] font-semibold text-sunset">{rev.location}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center pb-12">
+              <p className="font-serif text-2xl italic text-palm/50">
+                {language === 'es' ? "Aún no hay reseñas. ¡Sé el primero en contarnos tu experiencia!" : "No reviews yet. Be the first to share your experience!"}
+              </p>
+            </div>
+          )}
+
+          <div className="flex justify-center mt-8">
+            <button 
+              onClick={() => setIsFeedbackModalOpen(true)}
+              className="inline-flex items-center gap-3 border border-palm/20 bg-white px-8 py-4 rounded-full text-[10px] uppercase tracking-[0.3em] font-black hover:bg-palm hover:text-white transition-all cursor-pointer shadow-sm"
+            >
+              <MessageSquarePlus size={16} />
+              {t.leaveReviewBtn}
+            </button>
+          </div>
+        </div>
+      </section>
+
       <section id="ubicacion" className="py-20 md:py-48 bg-[#FBFBF9] border-t border-palm/5 overflow-hidden">
         <div className="container mx-auto px-6 md:px-8 flex flex-col md:grid md:grid-cols-2 gap-12 md:gap-32 items-center text-palm relative z-10">
-          
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }} 
-            whileInView={{ opacity: 1, y: 0 }} 
-            transition={{ duration: 0.8 }} 
-            viewport={{ once: true }}
-            className="w-full text-left"
-          >
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} viewport={{ once: true }} className="w-full text-left">
             <span className="text-[10px] uppercase tracking-[0.6em] opacity-40 block mb-6 font-sans font-bold">{t.contactTag}</span>
             <h2 className="text-5xl md:text-8xl font-serif mb-8 italic tracking-tighter uppercase font-black leading-tight">{t.contactTitle}</h2>
-            
             <div className="space-y-8 text-sm font-light text-gray-500 font-sans">
               <div className="border-l-2 border-sunset pl-6">
                 <p className="text-palm tracking-[0.2em] uppercase text-xs font-black mb-2">{t.address}</p>
-                <p className="max-w-md font-light italic text-gray-400 leading-relaxed">
-                  {t.locationDesc}
-                </p>
+                <p className="max-w-md font-light italic text-gray-400 leading-relaxed">{t.locationDesc}</p>
               </div>
-              
               <div className="pt-4">
-                <a 
-                  href="https://www.google.com/maps/place/Casa+Don+Jos%C3%A9/@15.8679158,-97.0861539,17z/data=!3m1!4b1!4m6!3m5!1s0x85b8f7005b6c317d:0xb4ce7fc27133988f!8m2!3d15.8679107!4d-97.083579!16s%2Fg%2F11w3gnjjvt?entry=ttu&g_ep=EgoyMDI2MDMxMS4wIKXMDSoASAFQAw%3D%3D"  
-                  target="_blank" 
-                  rel="noreferrer" 
-                  className="inline-flex items-center gap-3 border border-palm/20 px-8 py-4 rounded-full text-[10px] uppercase tracking-widest font-black hover:bg-palm hover:text-white transition-all w-full md:w-auto justify-center"
-                >
+                <a href="https://www.google.com/maps/place/Casa+Don+Jos%C3%A9/@15.8679158,-97.0861539,17z" target="_blank" rel="noreferrer" className="inline-flex items-center gap-3 border border-palm/20 px-8 py-4 rounded-full text-[10px] uppercase tracking-widest font-black hover:bg-palm hover:text-white transition-all w-full md:w-auto justify-center cursor-pointer">
                   <MapPin size={14} /> {t.mapBtn}
                 </a>
               </div>
             </div>
           </motion.div>
-
           <div className="w-full h-87.5 md:h-[75vh] grayscale hover:grayscale-0 transition-all duration-1000 shadow-xl rounded-sm overflow-hidden border border-palm/5">
-             <iframe 
-               src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3837.7846709266782!2d-97.083579!3d15.8679107!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x85b8f7005b6c317d%3A0xb4ce7fc27133988f!2sCasa%20Don%20Jos%C3%A9!5e0!3m2!1ses!2smx!4v1773687957164!5m2!1ses!2smx" 
-               width="100%" 
-               height="100%" 
-               style={{ border: 0 }} 
-               allowFullScreen="" 
-               loading="lazy" 
-             />
+             <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3837.7846709266782!2d-97.083579!3d15.8679107!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x85b8f7005b6c317d%3A0xb4ce7fc27133988f!2sCasa%20Don%20Jos%C3%A9!5e0!3m2!1ses!2smx!4v1773687957164!5m2!1ses!2smx" width="100%" height="100%" style={{ border: 0 }} allowFullScreen="" loading="lazy" />
           </div>
         </div>
       </section>
 
-      {/* --- LIGHTBOX MOVILES --- */}
       <AnimatePresence>
         {selectedImage && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSelectedImage(null)} className="fixed inset-0 z-200 bg-white/98 flex items-center justify-center p-4 md:p-12 cursor-zoom-out text-palm uppercase font-black tracking-tighter italic">
@@ -610,7 +730,6 @@ function App() {
         )}
       </AnimatePresence>
 
-      {/* --- FOOTER --- */}
       <footer className="py-24 md:py-32 bg-white border-t border-palm/5 text-palm text-center relative z-10">
         <div className="container mx-auto px-8">
           <div className="flex justify-center gap-12 md:gap-16 mb-16 md:mb-20 opacity-40 hover:opacity-100 transition-all duration-500">
