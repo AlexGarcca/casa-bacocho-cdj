@@ -49,7 +49,7 @@ const translations = {
     vibesCards: [
       { title: "Cultura & Beats", text: "Desde la mixología refinada en Bacocho hasta el ambiente vibrante de Zicatela y los atardeceres techno en La Punta. Puerto nunca duerme." },
       { title: "Gastronomía", text: "Disfruta de la pesca del día en cenas de autor frente al mar o el aroma del café de altura oaxaqueño en el mercado tradicional." },
-      { title: "Aventura", text: "Surf de clase mundial en Zicatela, whale watching, and private yacht charters into the endless Pacific horizon departing from the Main Bay." }
+      { title: "Aventura", text: "Surf de clase mundial en Zicatela, avistamiento de ballenas y renta de yates privados hacia el infinito horizonte del Pacífico, zarpando desde la Bahía Principal." }
     ],
     reviewsTag: "05 / Testimonios",
     reviewsTitle: "Lo que dicen nuestros huéspedes",
